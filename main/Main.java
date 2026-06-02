@@ -55,6 +55,13 @@ public class Main {
             XQueryParser parser = new XQueryParser(tokens);
             ParseTree tree = parser.xq();
             String optimizedQuery = XQueryOptimizer.optimize(query, (XQueryParser.XqContext)tree);
+            if (!optimizedQuery.equals(query)) {
+                CharStream optimizedInput = CharStreams.fromString(optimizedQuery);
+                XQueryLexer optimizedLexer = new XQueryLexer(optimizedInput);
+                CommonTokenStream optimizedTokens = new CommonTokenStream(optimizedLexer);
+                XQueryParser optimizedParser = new XQueryParser(optimizedTokens);
+                tree = optimizedParser.xq();
+            }
             XQueryEngine.docPathOverride = xmlPath;
             XQueryEngine engine = new XQueryEngine();
             result = engine.visit(tree);

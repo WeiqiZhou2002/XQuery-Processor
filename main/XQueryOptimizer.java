@@ -33,26 +33,33 @@ public class XQueryOptimizer {
         List<VariableGroup> groups = buildVariableGroups(bindings);
         Map<String, Integer> varToGroup = buildVarToGroup(groups);
         List<JoinCondition> joins = extractJoinConditions(flwr.cond(), varToGroup);
-
-        for (JoinCondition j : joins) {
-            System.out.println(
-            "join condition: group " + j.leftGroup + " ." + j.leftAttr +
-            " == group " + j.rightGroup + " ." + j.rightAttr
-            );
+        String joinExpr = buildJoinExpression(groups, joins);
+        if (joinExpr == null) {
+            return originalQuery;
         }
+        String rewrittenReturn = rewriteReturnExpr(flwr.retExpr.getText(), bindings);
 
-        for(int i=0;i<groups.size();i++){
-            System.out.print("group" + i + ":");
-            for (Binding b : groups.get(i).bindings) {
-                System.out.print(b.var + " ");
-             }
-             System.out.println("subquery " + i + ":");
-            System.out.println(buildTupleSubquery(groups.get(i)));
-            System.out.println();
-        }
+        String optimized = "for $tuple in " + joinExpr + " return " + rewrittenReturn;
+        System.out.println("optimized query:");
+        System.out.println(optimized);
+
+        // if (joinExpr != null) {
+        //     System.out.println("join expression:");
+        //     System.out.println(joinExpr);
+        // }
+        
+        // for(int i=0;i<groups.size();i++){
+        //     System.out.print("group" + i + ":");
+        //     for (Binding b : groups.get(i).bindings) {
+        //         System.out.print(b.var + " ");
+        //      }
+        //      System.out.println("subquery " + i + ":");
+        //     System.out.println(buildTupleSubquery(groups.get(i)));
+        //     System.out.println();
+        // }
 
         
-        return originalQuery;
+        return optimized;
     }
 
     private static List<Binding> extractBindings(XQueryParser.ForClauseContext forClause) {
@@ -234,5 +241,46 @@ public class XQueryOptimizer {
         }
         sb.append("}</tuple>)");
         return sb.toString();
+    }
+
+    private static String buildJoinExpression(
+        List<VariableGroup> groups,
+        List<JoinCondition> joins) {
+
+    if (groups.size() != 2 || joins.isEmpty()) {
+        return null;
+    }
+
+    JoinCondition j = joins.get(0);
+
+    String leftSubquery = buildTupleSubquery(groups.get(j.leftGroup));
+    String rightSubquery = buildTupleSubquery(groups.get(j.rightGroup));
+
+    return "join(" +
+        leftSubquery + ", " +
+        rightSubquery + ", " +
+        "[" + j.leftAttr + "], " +
+        "[" + j.rightAttr + "]" +
+        ")";
+    }   
+
+    private static String rewriteReturnExpr(String returnExpr, List<Binding> bindings){
+        // replace longer variable names first
+        List<Binding> ordered = new ArrayList<>(bindings);
+
+        ordered.sort((a, b) -> Integer.compare(b.var.length(), a.var.length()));
+
+        String rewritten = returnExpr;
+
+        for(Binding b:bindings){
+            String var = b.var;             //"$b"
+            String attr = var.substring(1); // "b";
+
+            String pattern = "\\Q" + var + "\\E(?![a-zA-Z0-9_])";
+            String replacement = "\\$tuple/" + attr + "/*";
+
+            rewritten = rewritten.replaceAll(pattern, replacement);
+        }
+        return rewritten;
     }
 }
