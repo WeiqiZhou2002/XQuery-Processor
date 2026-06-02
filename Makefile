@@ -8,8 +8,10 @@
 #   make run Q='...' [XML=...] [OUT=...]
 #                           run one ad-hoc query against XML (default test.xml),
 #                           writing the result to OUT (default out.xml), and print it.
-#   make test               run all 5 course example queries against j_caesar.xml
-#                           and dump outputs to outputs/out[1-5].xml
+#   make test               run smoke tests for Milestones 1, 2, and 3
+#   make test-m1            run the 5 XPath course example queries
+#   make test-m2            run XQuery examples over j_caesar.xml
+#   make test-m3            run join optimizer/hash-join smoke tests
 #   make submission         build submission.zip in the correct grader layout
 #   make clean              delete generated + compiled files + outputs
 
@@ -82,7 +84,9 @@ run: classes
 # ---------------------------------------------------------------------------
 TEST_XML = data/j_caesar.xml
 
-test: classes
+test: test-m1 test-m2 test-m3
+
+test-m1: classes
 	@if [ ! -f $(TEST_XML) ]; then \
 	  echo "ERROR: $(TEST_XML) not found in project root."; \
 	  echo "Download it from the course page and place it here."; exit 1; \
@@ -100,6 +104,68 @@ test: classes
 	  head -40 outputs/out$$i.xml; \
 	  echo ""; \
 	done
+
+# ---------------------------------------------------------------------------
+# Milestone 2: XQuery examples from the course milestone examples.
+# ---------------------------------------------------------------------------
+test-m2: classes
+	@mkdir -p outputs
+	@printf '%s\n' \
+	  '<result>{' \
+	  'for $$a in document("j_caesar.xml")//ACT,' \
+	  '    $$sc in $$a//SCENE,' \
+	  '    $$sp in $$sc/SPEECH' \
+	  'where $$sp/LINE/text() = "Et tu, Brute! Then fall, Caesar."' \
+	  'return <who>{$$sp/SPEAKER/text()}</who>,' \
+	  '       <when>{<act>{$$a/TITLE/text()}</act>,' \
+	  '             <scene>{$$sc/TITLE/text()}</scene>}' \
+	  '       </when>' \
+	  '}</result>' > outputs/m2_q1.txt
+	@printf '%s\n' \
+	  '<result>{' \
+	  'for $$s in document("j_caesar.xml")//SPEAKER' \
+	  'return <speaks>{<who>{$$s/text()}</who>,' \
+	  '                for $$a in document("j_caesar.xml")//ACT' \
+	  '                where some $$s1 in $$a//SPEAKER satisfies $$s1 eq $$s' \
+	  '                return <when>{$$a/TITLE/text()}</when>}' \
+	  '       </speaks>' \
+	  '}</result>' > outputs/m2_q2.txt
+	@echo "=== Milestone 2 example 1 ==="
+	java -cp $(CP) main.Main $(TEST_XML) outputs/m2_q1.txt outputs/m2_example1.xml
+	@grep -q '<who>CAESAR</who>' outputs/m2_example1.xml
+	@grep -q '<act>ACT III</act>' outputs/m2_example1.xml
+	@head -20 outputs/m2_example1.xml
+	@echo ""
+	@echo "=== Milestone 2 example 2 ==="
+	java -cp $(CP) main.Main $(TEST_XML) outputs/m2_q2.txt outputs/m2_example2.xml
+	@grep -q '<speaks>' outputs/m2_example2.xml
+	@wc -l outputs/m2_example2.xml
+	@echo ""
+
+# ---------------------------------------------------------------------------
+# Milestone 3: join operator + optimizer smoke tests.
+# ---------------------------------------------------------------------------
+test-m3: classes
+	@mkdir -p outputs
+	@echo "=== Milestone 3 manual join ==="
+	java -cp $(CP) main.Main data/test.xml docs/join_test.xq outputs/m3_join_test.xml
+	@grep -q '<joined>' outputs/m3_join_test.xml
+	@echo "=== Milestone 3 local filter join ==="
+	java -cp $(CP) main.Main data/test.xml docs/local_filter_join_test.xq outputs/m3_local_filter_join_test.xml
+	@grep -q '<book id="2">' outputs/m3_local_filter_join_test.xml
+	@echo "=== Milestone 3 multi-key join ==="
+	java -cp $(CP) main.Main data/test.xml docs/multikey_join_test.xq outputs/m3_multikey_join_test.xml
+	@grep -q '<book id="1">' outputs/m3_multikey_join_test.xml
+	@grep -q '<book id="2">' outputs/m3_multikey_join_test.xml
+	@echo "=== Milestone 3 nested three-group join ==="
+	java -cp $(CP) main.Main data/test.xml docs/three_group_join_test.xq outputs/m3_three_group_join_test.xml
+	@grep -q '<book id="1">' outputs/m3_three_group_join_test.xml
+	@grep -q '<book id="2">' outputs/m3_three_group_join_test.xml
+	@echo "=== Milestone 3 note-shaped query ==="
+	java -cp $(CP) main.Main data/books_join.xml docs/m3_note_shape_test.xq outputs/m3_note_shape_test.xml
+	@grep -q '<triplet>' outputs/m3_note_shape_test.xml
+	@wc -l outputs/m3_*.xml
+	@echo ""
 
 # ---------------------------------------------------------------------------
 # Build submission.zip in the exact layout the grader expects.
@@ -127,4 +193,4 @@ clean:
 	rm -rf outputs
 	rm -f dist/submission.zip .query.tmp
 
-.PHONY: all parser xpath-parser xquery-parser classes run test submission clean
+.PHONY: all parser xpath-parser xquery-parser classes run test test-m1 test-m2 test-m3 submission clean
