@@ -1,0 +1,30 @@
+<root>
+  <book id="1">
+    <author>
+      <first>John</first>
+      <last>Smith</last>
+    </author>
+    <author>
+      <first>Alice</first>
+      <last>Jones</last>
+    </author>
+  </book>
+
+  <book id="2">
+    <author>
+      <first>John</first>
+      <last>Smith</last>
+    </author>
+    <author>
+      <first>Bob</first>
+      <last>Brown</last>
+    </author>
+  </book>
+
+  <book id="3">
+    <author>
+      <first>Bob</first>
+      <last>Brown</last>
+    </author>
+  </book>
+</root>
