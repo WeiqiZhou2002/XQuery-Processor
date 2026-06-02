@@ -11,8 +11,10 @@ grammar XPath;
  */
 
 // Absolute paths (ap): rule (1) and (2) in the note.
-ap  : 'doc' '(' STRING ')' '/'  rp      # apChildren        // doc(fn)/rp
-    | 'doc' '(' STRING ')' '//' rp      # apDescendants     // doc(fn)//rp
+ap  : 'doc' '(' STRING ')' '/'  rp       # apChildren        // doc(fn)/rp
+    | 'doc' '(' STRING ')' '//' rp       # apDescendants     // doc(fn)//rp
+    | 'document' '(' STRING ')' '/'  rp  # apDocChildren     // document(fn)/rp
+    | 'document' '(' STRING ')' '//' rp  # apDocDescendants  // document(fn)//rp
     ;
 
 // Relative paths (rp): rules (3)-(13) in the note.

@@ -113,6 +113,39 @@ public class XPathEngine extends XPathBaseVisitor<List<Node>> {
 
     return visit(ctx.rp());
   }
+
+  @Override
+  public List<Node> visitApDocChildren(XPathParser.ApDocChildrenContext ctx) {
+    String fileName = (docPathOverride != null)
+        ? docPathOverride
+        : unquote(ctx.STRING().getText());
+    try {
+      contextNodes = new ArrayList<>();
+      Document doc = loadXml(fileName);
+      contextNodes.add(doc);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    return visit(ctx.rp());
+  }
+
+  @Override
+  public List<Node> visitApDocDescendants(XPathParser.ApDocDescendantsContext ctx) {
+    String fileName = (docPathOverride != null)
+        ? docPathOverride
+        : unquote(ctx.STRING().getText());
+    try {
+      contextNodes = new ArrayList<>();
+      Document doc = loadXml(fileName);
+      contextNodes.add(doc);
+      contextNodes.addAll(descendantOrSelf(doc));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    return visit(ctx.rp());
+  }
   
   // Rule (3): [[tagName]]_R(n) = children of n whose tag equals tagName.
   @Override

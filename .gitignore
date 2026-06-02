@@ -1,0 +1,16 @@
+.DS_Store
+.query.tmp
+
+# Build outputs
+build/
+*.class
+main/antlr/*.interp
+main/antlr/*.tokens
+
+# Local run artifacts
+outputs/
+dist/*.zip
+
+# Local environments and IDE noise
+venv/
+.idea/workspace.xml

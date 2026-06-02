@@ -25,6 +25,20 @@ public interface XPathVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitApDescendants(XPathParser.ApDescendantsContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code apDocChildren}
+	 * labeled alternative in {@link XPathParser#ap}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitApDocChildren(XPathParser.ApDocChildrenContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code apDocDescendants}
+	 * labeled alternative in {@link XPathParser#ap}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitApDocDescendants(XPathParser.ApDocDescendantsContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code rpText}
 	 * labeled alternative in {@link XPathParser#rp}.
 	 * @param ctx the parse tree
