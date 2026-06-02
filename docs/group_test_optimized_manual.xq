@@ -1,0 +1,1 @@
+for $tuple in join((for $b in document("test.xml")/library/book, $t in $b/title return <tuple>{<b>{$b}</b>, <t>{$t}</t>}</tuple>), (for $a in document("test.xml")/library/book, $t2 in $a/title return <tuple>{<a>{$a}</a>, <t2>{$t2}</t2>}</tuple>), [t], [t2]) return <r>{$tuple/b/*,$tuple/a/*}</r>
